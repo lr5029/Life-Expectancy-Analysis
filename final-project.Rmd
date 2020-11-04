@@ -1,0 +1,138 @@
+---
+title: "Final Project Group 9"
+subtitle: "SOC 225: Data & Society, Spring 2020"
+author: "Jingzhao Huang, Lauren Liao, Wei Yang, Angela Zhao, Siyue Zhu"
+date: "`r Sys.Date()`"
+output: 
+  html_document:
+    toc: true
+---
+
+
+```{r}
+library(tidyverse)
+library(dplyr)
+```
+
+
+# 1: Data Collection
+
+## Import datasets
+
+```{r}
+lifeExp_data <- read_csv("data/Life Expectancy Data.csv")
+continent_data <- read_csv("data/Countries-Continents.csv")
+```
+
+## Provide summary statistics for related variables
+
+```{r}
+summary(lifeExp_data$`Life expectancy`)
+summary(lifeExp_data$GDP)
+```
+
+
+# 2: Data Preparation
+
+
+## Merge two sources of data + clean NAs
+
+```{r}
+whole_data <- left_join(lifeExp_data, continent_data, by = c("Country"="Country"), na = c("NA", "N/A"))
+```
+
+## Rename the colomn `GDP` as `GDP_per_capita`
+
+```{r}
+names(whole_data)[names(whole_data) == "GDP"] <- "GDP_per_capita"
+```
+
+## Clean other missing values
+
+```{r}
+whole_data <-
+  whole_data %>% 
+  filter(`Life expectancy` != 0 & GDP_per_capita != 0)
+```
+
+## Create a numeric variable: GDP
+
+```{r}
+whole_data <-
+  whole_data %>% 
+  mutate(GDP = GDP_per_capita * Population)
+``` 
+
+## Provide summary statistics for revised dataset
+
+```{r}
+summary(whole_data)
+glimpse(whole_data)
+```
+
+
+# 3: Visual Analysis
+
+## Histogram for Life Expectancy in All Countries
+
+```{r}
+ggplot(whole_data, aes(x = `Life expectancy`)) +
+  geom_histogram() +
+  labs(title = "Life Expectancy in All Countries")
+```
+
+
+## Histogram for GDP per capita in All Countries
+
+```{r}
+whole_data %>% 
+  drop_na() %>%
+  filter(GDP_per_capita != 0) %>%
+  ggplot(aes(x = GDP_per_capita)) +
+  geom_histogram() +
+  labs(title = "GDP per capita in All Countries")
+```
+
+
+## Scatter Plot between Life Expectancy and GDP per capita in All Countries
+
+```{r}
+ggplot(whole_data, aes(x = GDP_per_capita, y = `Life expectancy`)) +
+  geom_point() +
+  geom_smooth() +
+  labs(title = "Life Expectancy and GDP per capita in All Countries")
+```
+
+
+## Boxplot for Life Expectancy in Developing and Developed Countries
+
+```{r}
+ggplot(whole_data, aes(x = Status, y = `Life expectancy`, color = Status)) + 
+  geom_boxplot() + 
+  labs(title = "Boxplot for Life Expectancy in Developing and Developed Countries")
+```
+
+
+## Scatter Plot between Life Expectancy and GDP in Developing Countries 
+
+```{r}
+developing_data <- filter(whole_data, Status == 'Developing')
+ggplot(developing_data, aes(x = GDP_per_capita, y = `Life expectancy`)) + 
+  geom_point() + 
+  geom_smooth(method = "lm", colour = "red") + 
+  guides(color = FALSE) + 
+  labs(title = "GDP per capita and Life Expectancy in Developing Countries")
+```
+
+
+## Scatter Plot between Life Expectancy and GDP per capita in Developed Countries
+
+```{r}
+developed_data <- filter(whole_data, Status == 'Developed')
+ggplot(developed_data, aes(x = GDP_per_capita, y = `Life expectancy`)) + 
+  geom_point() + 
+  geom_smooth(method = "lm", colour = "red") + 
+  guides(color = FALSE) +
+  labs(title = "GDP per capita and Life Ecpectancy in Develped Countries")
+```
+
